@@ -7,27 +7,39 @@ from django.test import TestCase
 import pytest
 
 
-@pytest.mark.django_db
-class TestViews(TestCase):
+# @pytest.mark.django_db
+# class TestViews(TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        super(TestViews, cls).setUpClass()
-        mixer.blend('products.Product')
-        cls.factory = RequestFactory()
+    # @classmethod
+    # def setUpClass(cls):
+    #     super(TestViews, cls).setUpClass()
+    #     mixer.blend('products.Product')
+    #     cls.factory = RequestFactory()
 
-    def test_product_detail_authenticated(self):
-        path = reverse('detail', kwargs={'pk': 1})
-        request = self.factory.get(path)
-        request.user = mixer.blend(User)
+@pytest.fixture
+def factory(scope='module'):
+    print("FACTORY INSTANTIATED")
+    return RequestFactory()
 
-        response = product_detail(request, pk=1)
-        assert response.status_code == 200
 
-    def test_product_detail_unauthenticated(self):
-        path = reverse('detail', kwargs={'pk': 1})
-        request = self.factory.get(path)
-        request.user = AnonymousUser()
+@pytest.fixture
+def product(db):
+    return mixer.blend('products.Product')
 
-        response = product_detail(request, pk=1)
-        assert 'accounts/login' in response.url
+
+def test_product_detail_authenticated(factory, product):
+    path = reverse('detail', kwargs={'pk': 1})
+    request = factory.get(path)
+    request.user = mixer.blend(User)
+
+    response = product_detail(request, pk=1)
+    assert response.status_code == 200
+
+
+def test_product_detail_unauthenticated(factory, product):
+    path = reverse('detail', kwargs={'pk': 1})
+    request = factory.get(path)
+    request.user = AnonymousUser()
+
+    response = product_detail(request, pk=1)
+    assert 'accounts/login' in response.url
